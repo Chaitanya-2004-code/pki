@@ -1,0 +1,118 @@
+===================================== Bank Client =====================================
+  
+pki@pky:~/bank$ = openssl genpkey -algorithm RSA -out bank_pri.pem
+
+
+
+c
+pki@pky:~/bank$ = openssl rsa -pubout -in bank_pri.pem -out bank_pub.pem
+----------
+pki@pky:~/bank/acct1$ = openssl genpkey -algorithm RSA -out acct1_pri.pem
+
+pki@pky:~/bank/acct1$ = openssl rsa -pubout -in acct1_pri.pem -out acct1_pub.pem
+
+-========
+
+pki@pky:~/bank/acct1$ = openssl pkeyutl -encrypt -pubin -inkey ../bank_pub.pem -in msg.txt -out msg.enc
+
+ mv msg.enc ../
+
+pki@pky:~/bank$ = openssl pkeyutl -decrypt -inkey bank_pri.pem -in msg.enc -out msg.txt
+
+pki@pky:~/bank$ = ls
+acct1  acct2  acct3  bank_pri.pem  bank_pub.pem  msg.enc  msg.txt
+
+===================================== RSA Sign and Verify =====================================
+pki@pky:~/bank$ = openssl genpkey -algorithm RSA -out pri.pem
+
+pki@pky:~/bank$ = openssl rsa -pubout -in bank_pri.pem -out pub.pem
+
+
+. openssl dgst -sha256 -sign keyfile.pem -out file1.txt.sha256.sig file1.txt
+
+. openssl dgst -sha256 -verify public_key.pem -signature file1.txt.sha256.sig
+file1.txt
+
+===================================== Create certificates rootca,sub,private =====================================
+
+Root CA Certificate
+
+· Generate root CA private key:
+·= openssl genpkey -algorithm RSA -out root.key
+
+· Generate root CA Certificate Signing Request (CSR):
+·= openssl req -new -key root.key -out root.csr
+
+· Self-sign the Root CA certificate:
+= openssl x509 -req -in root.csr -signkey root.key -out root.crt -days 3650
+
+· View the file in a readable format:
+·= openssl x509 -in root.crt -text -noout
+-----------------------
+
+Sub CA Certificate
+
+· Generate sub CA private key:
+·= openssl genpkey -algorithm RSA -out sub.key
+
+· Generate sub CA Certificate Signing Request (CSR):
+·= openssl req -new -key sub.key -out sub.csr
+
+. Sign the sub CA CSR with Root CA:
+.= openssl x509 -req -in sub.csr -CA root.crt -CAkey root.key -CAcreateserial -out sub.crt -days 1825
+
+· View the file in a readable format:
+.= openssl x509 -in sub.crt -text -noout
+
+
+---------------------
+
+  Issue Digital Certificates from Sub CA
+· Generate some server's private key:
+·= openssl genpkey -algorithm RSA -out server.key
+
+· Generate CSR for an end entity (e.g. some server): cdac.ac.in
+=· openssl req -new -key server.key -out server.csr
+
+· Sign the CSR Sith sub CA:
+· openssl x509 -req -in server.csr -CA sub.crt -CAkey sub.key -CAcreateserial -out server.crt -days 365
+
+· View the file in a readable format:
+.= openssl x509 -in server.crt -text -noout
+
+which apache2
+---install apache2 -> restart > enable > status (systemctl -- apache2 )
+
+edit the html file
+vim /var/www/html/index.html
+
+then creat ssl.conf file
+cd /etc/apache2/site-avaliable/
+vim name.com-ssl.conf
+  -----
+    <VirtualHost *:443>
+        ServerName uttu.com
+        ServerAlias www.uttu.com
+        DocumentRoot /var/www/html
+
+        SSLEngine on
+        SSLCertificateFile /home/ditiss/uttu/www.uttu.com.pem
+        SSLCertificateKeyFile /home/ditiss/uttu/uttu_key.pem
+        SSLCACertificateFile /home/ditiss/uttu/rootCA.crt
+  </VirtualHost>
+-----
+
+a2enmod ssl
+a2ensite name.com-ssl
+systemctl restart apache2 
+systemctl enable apache2
+systemctl reload apache2
+
+---- go to browser and save the certificate and load the webiste
+
+
+
+=========================       =====================================
+
+md5sum msg.txt > msg.md5
+sha256sum 
