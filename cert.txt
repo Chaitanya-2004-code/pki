@@ -1,0 +1,33 @@
+
+
+openssl genrsa -out "root".key 2048
+openssl req -x509 -new -nodes -key "root".key -sha256 -days 3650 -out "root".crt
+echo"===============SubCA=================="
+openssl genrsa -out  "subca".key 2048
+openssl req -new -key "subca".key -out "subca".csr
+
+
+now create the file with name "subca"_ext.cnf  and in that enter this data 
+basicConstraints=critical,CA:TRUE,pathlen:0
+keyUsage=critical,keyCertSign,cRLSign
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer
+
+openssl x509 -req -in "subca".csr -CA "root".crt -CAkey "root".key -CAcreateserial -out "subca".crt -days 1825 -sha256 -extfile "subca"_ext.cnf
+
+echo"===============private=================="
+openssl genrsa -out  "private".key 2048
+openssl req -new -key "private".key -out "private".csr
+
+now create the file with name "private"_ext.cnf  and in that enter this data 
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature,nonRepudiation,keyEncipherment,keyAgreement
+extendedKeyUsage=serverAuth,clientAuth,emailProtection
+subjectAltName=@alt_names
+[alt_names]
+DNS.1= www."private".com
+
+
+openssl x509 -req -in "private".csr -CA "subca".crt -CAkey "subca".key -CAcreateserial -out "private".crt -days 365 -sha256 -extfile "private"_ext.cnf
+
+cat "private".crt "subca".crt "root".crt > fullchain.crt
