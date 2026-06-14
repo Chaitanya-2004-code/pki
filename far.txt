@@ -3,38 +3,34 @@ openssl genpkey -algorithm RSA -out bank_pvt.pem
 openssl rsa -pubout -in bank/bank_pvt.pem -out bank/bank_pub.pem 
 openssl pkeyutl -encrypt -pubin -in bank/bank_pub.pem -in cl1/cl1_msg.txt -out cl1/cl1_msg.enc
 openssl pkeyutl -decrypt -inkey bank/bank_pvt.pem -in bank/cl1_msg.enc -out bank/cl1_msg.dec 
-
+====================================================
 
 Symm key :
 openssl rand -base64 32 > secret.key
 openssl enc -aes-256-cbc -salt -in message.txt -out message.txt.enc -pass file:./secret.key
 openssl enc -d -aes-256-cbc -in message.txt.enc -out message_decrypted.txt -pass file:./secret.key
 
-
+==============
 
 Certificate :
 openssl genpkey -algorithm RSA -out root.key
 openssl req -new -key root.key -out root.csr
 openssl x509 -req -in root.csr -signkey root.key -out root.crt -days 3650
 
-Hashing :
-openssl dgst -sha256 message.txt
-openssl dgst -sha256 message.txt > message.txt.sha256
-openssl dgst -sha256 -verify message.txt.sha256 message.txt
-openssl x509 -in root.crt -text -noout
 
 subCA
 openssl x509 -req -in sub.csr -CA root.crt -CAkey root.key -CAcreateserial -out sub.crt -days 1825
 
 Cert:
 openssl x509 -req -in server.csr -CA sub.crt -CAkey sub.key -CAcreateserial -out server.crt -days 365
-
+=======================
 
 Hashing :
 openssl dgst -sha256 message.txt
 openssl dgst -sha256 message.txt > message.txt.sha256
 openssl dgst -sha256 -verify message.txt.sha256 message.txt
-
+openssl x509 -in root.crt -text -noout
+==============================================================
 Sign & Verify :
 openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -pubout -out public.pem
